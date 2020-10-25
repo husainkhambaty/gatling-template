@@ -1,0 +1,61 @@
+//
+//gatling {
+//  // WARNING: options below only work when logback config file isn't provided
+//  logLevel = 'WARN' // logback root level
+//  logHttp = 'NONE' // set to 'ALL' for all HTTP traffic in TRACE, 'FAILURES' for failed HTTP traffic in DEBUG
+//}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+apply plugin: 'scala'
+apply plugin: 'eclipse'
+apply plugin: 'maven'
+apply plugin: 'idea'
+
+
+task runLoadTest(type: JavaExec, description: "Run test directly") {
+    environment "GATLING_HOME", workingDir
+    systemProperties = System.getProperties()
+    classpath = sourceSets.test.runtimeClasspath
+    main = "io.gatling.app.Gatling"
+    args = Eval.me("['-sf', 'build/classes/main', " + "'-s', 'com.test.BasicSimulation', " + "'-df', 'gatling.conf']")
+}
+
+task copyClasses(type: Copy) {
+    dependsOn compileJava, compileScala
+    sourceSets.main.output.classesDirs.each {
+        from it
+    }
+    into "target/test-classes"
+}
+
+repositories {
+    mavenCentral()
+}
+
+
+processResources.dependsOn copyClasses
+sourceSets.main.output.resourcesDir = file("target/test-classes")
+
+dependencies {
+    compile 'io.gatling:gatling-app:2.3.0'
+    compile 'io.gatling.highcharts:gatling-charts-highcharts:2.3.0'
+    compile 'org.scala-lang:scala-compiler:2.12.3'
+    compile 'org.scala-lang:scala-library:2.12.3'
+
+//    compile ('org.apache.activemq:activemq-client:5.15.0') {
+//        exclude module: 'org.slf4j'
+//    }
+//    compile 'com.ibm:mq:7.5.0.2'
+//    compile 'com.ibm:mq-jms-Nojndi:7.5.0.4'
+//    compile 'com.oracle:ojdbc6:11.2.0.4'
+
+}
+
+tasks.withType(ScalaCompile) {
+    scalaCompileOptions.additionalParameters = ["-feature"]
+}
